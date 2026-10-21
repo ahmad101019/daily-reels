@@ -1,0 +1,19 @@
+{
+  "brand_label": "AHMAD FARAZ",
+  "brand_tagline": "WEB3 × AI × AUTOMATION",
+  "handle": "Ahmad Faraz Khan Balouch",
+  "cta": "Follow for daily *systems*, not luck.",
+  "voice": "en-US-AndrewNeural",
+  "voice_rate": "+6%",
+  "post_time_utc": "16:00",
+  "graph_api_version": "v23.0",
+  "start_date": "2026-10-22",
+  "colors": {
+    "bg_top": "#070B14",
+    "bg_bottom": "#121A2E",
+    "text": "#F5F7FA",
+    "accent": "#F5B841",
+    "accent2": "#22D3EE",
+    "muted": "#8A94A8"
+  }
+}
