@@ -1,0 +1,77 @@
+name: Daily Reel
+
+on:
+  schedule:
+    # 15:17 UTC = 8:17 PM PKT. The job builds the reel, then waits and posts at 16:00 UTC = 9:00 PM PKT.
+    - cron: "17 15 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Build the reel only (don't post) - download it from Artifacts"
+        type: boolean
+        default: true
+      post_now:
+        description: "Post immediately instead of waiting for 9 PM PKT"
+        type: boolean
+        default: false
+      script_index:
+        description: "Optional: force a script number (0-29)"
+        type: string
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-reel
+  cancel-in-progress: false
+
+jobs:
+  reel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-dejavu-core
+          pip install -q -r requirements.txt
+          mkdir -p fonts
+          curl -fsSL -o fonts/Montserrat-ExtraBold.ttf \
+            https://raw.githubusercontent.com/JulietaUla/Montserrat/master/fonts/ttf/Montserrat-ExtraBold.ttf || echo "Font download failed, using DejaVu"
+
+      - name: Build and post reel
+        env:
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+          POST_NOW: ${{ github.event_name == 'workflow_dispatch' && inputs.post_now || 'false' }}
+          SCRIPT_INDEX: ${{ inputs.script_index }}
+        run: python main.py
+
+      - name: Save reel as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reel-${{ github.run_number }}
+          path: out/reel.mp4
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Log posted reel
+        if: success()
+        run: |
+          if [ -n "$(git status --porcelain log/)" ]; then
+            git config user.name "daily-reels-bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add log/posted.csv
+            git commit -m "Log reel $(date -u +%F)"
+            git push
+          fi
