@@ -26,8 +26,29 @@ def _check(r, step):
     return data
 
 
+def resolve_page_token(page_id, token, api_version):
+    """Accepts a Page token or a User token; returns a Page token. Logs expiry (never the token)."""
+    base = f"https://graph.facebook.com/{api_version}"
+    try:
+        info = requests.get(f"{base}/debug_token", timeout=30,
+                            params={"input_token": token, "access_token": token}).json().get("data", {})
+        exp = info.get("expires_at", 0)
+        print(f"Key type: {info.get('type')}, expires: {'never' if not exp else time.strftime('%Y-%m-%d', time.gmtime(exp))}")
+        if info.get("type") == "PAGE":
+            return token
+    except Exception as e:  # noqa: BLE001
+        print(f"Could not inspect key: {e}")
+    r = requests.get(f"{base}/{page_id}", timeout=30, params={"fields": "access_token", "access_token": token})
+    data = r.json()
+    if "access_token" in data:
+        print("Got Page key from User key.")
+        return data["access_token"]
+    return token
+
+
 def post_reel(page_id, token, video_path, description, api_version="v23.0"):
     base = f"https://graph.facebook.com/{api_version}"
+    token = resolve_page_token(page_id, token, api_version)
 
     # 1) start upload session
     start = _check(requests.post(f"{base}/{page_id}/video_reels",
