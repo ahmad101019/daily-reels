@@ -6,7 +6,7 @@
   "voice": "en-US-AndrewNeural",
   "voice_rate": "+6%",
   "post_time_utc": "16:00",
-  "graph_api_version": "v23.0",
+  "graph_api_version": "v26.0",
   "start_date": "2026-10-22",
   "colors": {
     "bg_top": "#070B14",
